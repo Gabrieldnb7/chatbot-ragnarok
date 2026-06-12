@@ -1,0 +1,1 @@
+# Tarefa 05: Busca semântica e lógica de recusa

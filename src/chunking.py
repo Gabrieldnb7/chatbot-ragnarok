@@ -1,0 +1,1 @@
+# Tarefa 02: Divisão de chunks e metadados
