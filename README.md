@@ -60,7 +60,7 @@ Crie um arquivo `.env` na raiz do projeto baseado no `.env.example` e adicione a
 ```bash
 cp .env.example .env
 ```
-> Edite o arquivo `.env` com a sua API Key do provedor LLM escolhido (ou configure a URL do Ollama para uso local).
+> Edite o arquivo `.env` com a sua API Key do provedor LLM escolhido.
 
 ### 5. Executar a Interface
 Para subir a aplicação via interface web (exemplo usando Streamlit):
