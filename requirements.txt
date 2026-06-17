@@ -21,7 +21,7 @@ MarkupSafe==3.0.3
 mdurl==0.1.2
 murmurhash==1.0.15
 nltk==3.9.4
-numpy==2.4.6
+numpy>=1.26.0,<3.0
 packaging==26.2
 preshed==3.0.13
 pt_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.8.0/pt_core_news_sm-3.8.0-py3-none-any.whl#sha256=c304fa04db3af73cd08a250feacf560506e15a2ec2469bd1b09f06847f6b455c
@@ -48,3 +48,4 @@ wasabi==1.1.3
 weasel==1.0.0
 wrapt==2.2.1
 langchain-text-splitters==1.1.2
+sentence-transformers>=5.0.0
