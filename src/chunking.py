@@ -84,7 +84,15 @@ def _split_long_text(text: str) -> list:
         separators=["\n\n", "\n", ". ", "; ", ", ", " ", ""],
         keep_separator="start",
     )
-    return [chunk.strip() for chunk in text_splitter.split_text(text) if chunk.strip()]
+    # O keep_separator=\"start\" mantém o separador no início do chunk seguinte.
+    # Removemos pontuação inicial (\". \", \", \") que ficou órfã, já que o
+    # separador cumpriu seu papel de marcar a quebra — a pontuação pertence
+    # ao chunk anterior, não ao atual.
+    return [
+        chunk.lstrip(".!?;:,").strip()
+        for chunk in text_splitter.split_text(text)
+        if chunk.strip()
+    ]
 
 
 def _protect_abbreviations(text: str) -> str:
