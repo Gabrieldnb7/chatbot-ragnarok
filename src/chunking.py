@@ -227,7 +227,14 @@ def _build_semantic_chunks(semantic_units: list) -> list:
         # Regra 2: se houve queda semântica relevante, abre um novo chunk.
         if current_indexes:
             current_text = _join_units_by_indexes(semantic_units, current_indexes)
-            similarity = _cosine_similarity(embeddings, current_indexes[-1], index)
+
+            # Calcula a similaridade entre o CENTROIDE do chunk atual e a nova
+            # unidade. Usar a média (centroide) de todos os embeddings do chunk
+            # é mais estável do que comparar apenas com a última unidade, pois
+            # evita que uma unidade de transição genérica (ex: "Siga as
+            # instruções acima.") cause uma quebra falsa no chunk.
+            centroid = embeddings[current_indexes].mean(axis=0)
+            similarity = float(centroid @ embeddings[index])
 
             if (
                 len(current_text) >= MIN_SEMANTIC_CHUNK_SIZE
