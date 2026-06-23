@@ -10,7 +10,7 @@ def store_in_vector_db(embedded_chunks: list) -> bool:
     Parâmetros:
         embedded_chunks (list): Lista de dicionários, onde cada dicionário contém:
                                 - 'id': Identificador único do chunk
-                                - 'text': O texto original do chunk
+                                - 'texto': O texto original do chunk (conforme Tarefas 02 e 03)
                                 - 'embedding': A lista de floats representando o vetor
                                 - 'metadata': Dicionário com a fonte, página, etc.
                             
@@ -44,7 +44,7 @@ def store_in_vector_db(embedded_chunks: list) -> bool:
             
             ids.append(doc_id)
             embeddings.append(chunk["embedding"])
-            documents.append(chunk["text"])
+            documents.append(chunk["texto"])
             
             metadata = chunk.get("metadata", {"source": "documento_desconhecido"})
             metadatas.append(metadata)
