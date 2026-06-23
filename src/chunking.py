@@ -23,6 +23,19 @@ MIN_SEMANTIC_CHUNK_SIZE = 300
 _SENTENCE_SEPARATOR_PATTERN = re.compile(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\[])")
 _PARAGRAPH_SEPARATOR_PATTERN = re.compile(r"\n\s*\n+")
 
+# Abreviações conhecidas do português que NÃO devem ser confundidas com fim de frase.
+# O split por sentenças protege estas abreviações temporariamente para evitar
+# que o "." seja interpretado como pontuação de encerramento.
+_ABREVIACOES_CONHECIDAS = re.compile(
+    r"\b(?:Dr|Sr|Sra|Srta|Srtas|Srs|Sras|etc|Ltda|obs|art|pág|vol|cap|ed|Ex|V)\.\s",
+    re.UNICODE,
+)
+# Placeholder usado durante a proteção (caractere de controle não-imprimível).
+# Durante a proteção, substitui o espaço após a abreviatura para que o
+# separador de sentenças não confunda "Dr. " com fim de frase.
+# Na restauração, o marcador é convertido de volta para um espaço simples.
+_ABBREV_MARKER = "\x00"
+
 _semantic_model = None
 
 
@@ -74,6 +87,26 @@ def _split_long_text(text: str) -> list:
     return [chunk.strip() for chunk in text_splitter.split_text(text) if chunk.strip()]
 
 
+def _protect_abbreviations(text: str) -> str:
+    """Protege abreviações conhecidas para o separador de sentenças não quebrá-las.
+
+    Remove o espaço após a abreviatura e insere um marcador temporário no lugar.
+    Ex: "Dr. Carlos" → "Dr.\\x00Carlos"
+
+    Após o split por sentenças, _restore_abbreviations() converte o marcador
+    de volta para um espaço simples, restaurando o texto original sem duplicação.
+    """
+    def _protect(match: re.Match) -> str:
+        # match.group(0) é "Dr. " — remove o espaço final e coloca o marcador
+        return match.group(0).rstrip() + _ABBREV_MARKER
+    return _ABREVIACOES_CONHECIDAS.sub(_protect, text)
+
+
+def _restore_abbreviations(text: str) -> str:
+    """Restaura os espaços removidos pela proteção de abreviações."""
+    return text.replace(_ABBREV_MARKER, " ")
+
+
 def _split_into_semantic_units(cleaned_text: str) -> list:
     """
     Quebra o texto em unidades de comparação semântica.
@@ -81,6 +114,10 @@ def _split_into_semantic_units(cleaned_text: str) -> list:
     Primeiro o texto é dividido por parágrafos e frases. Depois essas unidades
     são comparadas por embeddings temporários para decidir onde os chunks devem
     começar e terminar.
+
+    Abreviações conhecidas (Dr., Sr., Sra., etc.) são protegidas antes do
+    split por sentenças para evitar que o ponto final seja confundido com
+    pontuação de encerramento de frase.
     """
     paragraphs = [
         paragraph.strip()
@@ -91,9 +128,12 @@ def _split_into_semantic_units(cleaned_text: str) -> list:
     semantic_units = []
 
     for paragraph in paragraphs:
+        # Protege abreviações antes de dividir em sentenças
+        paragraph_protected = _protect_abbreviations(paragraph)
+
         sentences = [
             sentence.strip()
-            for sentence in _SENTENCE_SEPARATOR_PATTERN.split(paragraph)
+            for sentence in _SENTENCE_SEPARATOR_PATTERN.split(paragraph_protected)
             if sentence.strip()
         ]
 
@@ -101,6 +141,9 @@ def _split_into_semantic_units(cleaned_text: str) -> list:
             continue
 
         for sentence in sentences:
+            # Restaura abreviações em cada sentença
+            sentence = _restore_abbreviations(sentence)
+
             if len(sentence) <= CHUNK_SIZE:
                 semantic_units.append(sentence)
             else:
