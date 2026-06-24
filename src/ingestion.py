@@ -40,7 +40,7 @@ def substituir_cartao(match) -> str:
     """Função auxiliar para o regex substituir apenas cartões reais."""
     texto_capturado = match.group(0)
     if is_valid_luhn(texto_capturado):
-        return '[DADO BANCARIO REMOVIDO]'
+        return '[CARTAO REMOVIDO]'
     return texto_capturado
 
 def ingest_and_anonymize(file_content: str) -> str:
@@ -57,31 +57,15 @@ def ingest_and_anonymize(file_content: str) -> str:
     texto_limpo = re.sub(r'\s+', ' ', file_content).strip()
 
     # =================================================================
-    # ETAPA 2: Anonimização Determinística (Expressões Regulares)
+    # ETAPA 2: Anonimização Contextual (spaCy - NER) — ANTES do regex
     # =================================================================
-    
-    # 🟡 5. CORREÇÃO: Regex para CPF aceitando formatos com ou sem pontuação explícita
-    texto_limpo = re.sub(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b', '[CPF REMOVIDO]', texto_limpo)
-    
-    # Padrão para E-mails
-    texto_limpo = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL REMOVIDO]', texto_limpo)
-    
-    # 🔴 1. CORREÇÃO: Telefone agora EXIGE DDD (ex: 11) para evitar que protocolos sejam capturados
-    texto_limpo = re.sub(r'\b(?:\+?55\s?)?\(?\d{2}\)?\s?(?:9\s?)?\d{4}[-\s]?\d{4}\b', '[TELEFONE REMOVIDO]', texto_limpo)
-    
-    # 🔴 2. CORREÇÃO: Integração do algoritmo de Luhn ao Regex de cartão de crédito
-    padrao_cartao = r'\b(?:\d{4}[-\s]?){3}\d{4}\b'
-    texto_limpo = re.sub(padrao_cartao, substituir_cartao, texto_limpo)
-
-    # =================================================================
-    # ETAPA 3: Anonimização Contextual (spaCy - NER)
-    # =================================================================
-    
-    # Carrega o spaCy apenas agora (se nunca rodar a função, não gasta memória atoa)
+    # NER roda primeiro no texto limpo (sem placeholders de regex) para
+    # evitar que textos como "[CARTAO REMOVIDO]" sejam interpretados como
+    # entidades nomeadas.
     nlp = carregar_spacy()
     doc = nlp(texto_limpo)
     texto_anonimizado = texto_limpo
-    
+
     for ent in reversed(doc.ents):
         # ℹ️ 6. CORREÇÃO: Adicionado 'ORG' (Organizações) além de 'PER' (Pessoas)
         if ent.label_ in ["PER", "ORG"]:
@@ -89,6 +73,25 @@ def ingest_and_anonymize(file_content: str) -> str:
             fim = ent.end_char
             tipo = "NOME" if ent.label_ == "PER" else "ORGANIZAÇÃO"
             texto_anonimizado = texto_anonimizado[:inicio] + f"[{tipo} REMOVIDO]" + texto_anonimizado[fim:]
+
+    # =================================================================
+    # ETAPA 3: Anonimização Determinística (Expressões Regulares)
+    # =================================================================
+    # Regex roda DEPOIS do NER para não gerar placeholders que o NER
+    # possa interpretar como entidades.
+
+    # 🟡 5. CORREÇÃO: Regex para CPF aceitando formatos com ou sem pontuação explícita
+    texto_anonimizado = re.sub(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b', '[CPF REMOVIDO]', texto_anonimizado)
+
+    # Padrão para E-mails
+    texto_anonimizado = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL REMOVIDO]', texto_anonimizado)
+
+    # 🔴 1. CORREÇÃO: Telefone agora EXIGE DDD (ex: 11) para evitar que protocolos sejam capturados
+    texto_anonimizado = re.sub(r'\b(?:\+?55\s?)?\(?\d{2}\)?\s?(?:9\s?)?\d{4}[-\s]?\d{4}\b', '[TELEFONE REMOVIDO]', texto_anonimizado)
+
+    # 🔴 2. CORREÇÃO: Integração do algoritmo de Luhn ao Regex de cartão de crédito
+    padrao_cartao = r'\b(?:\d{4}[-\s]?){3}\d{4}\b'
+    texto_anonimizado = re.sub(padrao_cartao, substituir_cartao, texto_anonimizado)
 
     return texto_anonimizado
 
@@ -105,7 +108,7 @@ if __name__ == "__main__":
     Dados Reais:
     Ligar para Maria da Silva no (11) 98765-4321 ou email maria@teste.com.
     CPF sem ponto: 12345678900.
-    A empresa Nubank processou o cartão 4532 1122 3344 5566.
+    A empresa Nubank processou o cartão 4111 1111 1111 1111.
     """
     
     try:
