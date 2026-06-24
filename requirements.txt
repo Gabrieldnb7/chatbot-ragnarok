@@ -50,3 +50,6 @@ weasel==1.0.0
 wrapt==2.2.1
 langchain-text-splitters==1.1.2
 sentence-transformers>=5.0.0
+python-dotenv>=1.1.0
+langchain-google-genai>=2.1.0
+stopwordsiso>=1.0.0

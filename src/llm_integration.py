@@ -426,7 +426,7 @@ def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]]
             detail_bits.append(f"correspondência no título: {', '.join(title_match_terms[:3])}")
         detail_block = f" | {'; '.join(detail_bits)}" if detail_bits else ""
         source_lines.append(
-            f"{index}. [Fonte: {source_ref}] [t\u00edtulo: {source_label}] [origem: {source_origin}] [score: {score_label}] {detail_block}\n   Trecho consultado: \"{excerpt}\""
+            f"- [Fonte: {source_ref}] {source_label} ({source_origin}{detail_block}, score {score_label})"
         )
 
     facts_block = []
@@ -439,42 +439,30 @@ def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]]
     if facts["actions"]:
         facts_block.append("Ações/decisões: " + " | ".join(facts["actions"]))
     if section_insights:
-        facts_block.append("An\u00e1lise por se\u00e7\u00f5es: " + " | ".join(section_insights))
+        facts_block.append("Análise por seções: " + " | ".join(section_insights))
     if not facts_block:
         facts_block.append("Não identifiquei datas, valores ou ações explícitas nos trechos recuperados.")
-    response_lines = []
+
+    # ── resposta_gerada concisa ──
+    answer_parts = []
     if llm_answer:
-        response_lines.extend([
-            f"Resposta gerada pelo {llm_provider.upper()}:",
-            llm_answer,
-            "",
-            "Auditoria do contexto recuperado:",
-        ])
-    response_lines.extend([
-        f"Pesquisa realizada:\n{search_overview}",
-        "",
-        "An\u00e1lise do conte\u00fado:",
-    ])
-    response_lines.extend([f"- {item}" for item in facts_block])
-    response_lines.extend([
-        "",
-        f"S\u00edntese do conte\u00fado:\n{document_summary}",
-        "",
-        "Trechos usados na resposta:",
-        "\n".join(source_lines),
-    ])
-    if supporting_sentences:
-        response_lines.extend([
-            "",
-            "Sentenças de apoio: " + " || ".join(supporting_sentences),
-        ])
-    response_lines.extend([
-        "",
-        "Síntese final: a resposta abaixo foi construída apenas com base nos trechos acima, sem adicionar informações externas.",
-    ])
+        answer_parts.append(llm_answer)
+    else:
+        answer_parts.append(search_overview)
+        if supporting_sentences:
+            answer_parts.append("")
+            answer_parts.append(" || ".join(supporting_sentences))
+
+    answer_parts.append("")
+    answer_parts.append("---")
+    answer_parts.append("**Fontes consultadas:**")
+    answer_parts.extend(source_lines)
+    answer_parts.append("")
+    answer_parts.append("---")
+    answer_parts.append("*Resposta construída com base exclusivamente nos trechos recuperados, sem adicionar informações externas.*")
 
     return {
-        "resposta_gerada": "\n".join(response_lines),
+        "resposta_gerada": "\n".join(answer_parts),
         "resumo_busca": search_overview,
         "resumo_documento": document_summary,
         "analise_documento": "\n".join(facts_block),
