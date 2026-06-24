@@ -76,13 +76,15 @@ def _build_provider_prompt(query: str, retrieved_context: Sequence[Dict[str, Any
 
     context_block = "\n\n".join(context_lines)
     return (
-        "Voc\u00ea \u00e9 um assistente RAG para an\u00e1lise de documentos. "
-        "Responda em portugu\u00eas brasileiro padr\u00e3o. "
+        "Você é um assistente RAG para análise de documentos. "
+        "Responda em português brasileiro padrão. "
         "Use exclusivamente o CONTEXTO RECUPERADO abaixo. "
-        "Se a resposta n\u00e3o estiver sustentada pelo contexto, diga que n\u00e3o h\u00e1 evid\u00eancia suficiente. "
-        "N\u00e3o invente informa\u00e7\u00f5es, datas, valores, nomes, tecnologias ou conclus\u00f5es. "
+        "Se a resposta não estiver sustentada pelo contexto, "
+        "NÃO invente nada — responda que não pode ajudar com essa "
+        "pergunta no momento e sugira procurar ajuda humana. "
+        "Não invente informações, datas, valores, nomes, tecnologias ou conclusões. "
         "Cite as fontes usadas no formato [Fonte: id].\n\n"
-        f"PERGUNTA DO USU\u00c1RIO:\n{query}\n\n"
+        f"PERGUNTA DO USUÁRIO:\n{query}\n\n"
         f"CONTEXTO RECUPERADO:\n{context_block}\n\n"
         "RESPOSTA:"
     )
@@ -104,7 +106,9 @@ def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) ->
         response = llm.invoke([
             (
                 "system",
-                "Responda somente com base no contexto recuperado e cite fontes no formato [Fonte: id].",
+                "Você é um assistente RAG. Responda SOMENTE se o contexto abaixo tiver informação suficiente. "
+                "Caso contrário, diga claramente que não pode ajudar com essa pergunta e sugira "
+                "procurar ajuda humana. Não invente respostas. Cite fontes no formato [Fonte: id].",
             ),
             ("human", prompt),
         ])
@@ -483,7 +487,10 @@ def generate_rag_response(query: str, retrieved_context: list) -> dict:
         return {
             "resposta_gerada": (
                 f"{search_overview}\n\n"
-                "Não encontrei evidências suficientes na base de conhecimento para responder com segurança."
+                "Não encontrei informações suficientes na minha base de conhecimento "
+                "para responder a essa pergunta. "
+                "Infelizmente, não posso ajudar com isso no momento.\n\n"
+                "Por favor, procure ajuda humana para obter a informação correta."
             ),
             "resumo_busca": search_overview,
             "resumo_documento": "Não foi possível sintetizar um documento de referência porque nenhum trecho relevante foi recuperado.",
@@ -503,9 +510,10 @@ def generate_rag_response(query: str, retrieved_context: list) -> dict:
         return {
             "resposta_gerada": (
                 f"Pesquisa realizada:\n{search_overview}\n\n"
-                f"S\u00edntese do conte\u00fado:\n{document_summary}\n\n"
-                "A evid\u00eancia recuperada foi insuficiente para uma resposta confi\u00e1vel. "
-                "Recomendo triagem humana ou a inclus\u00e3o de documentos mais espec\u00edficos."
+                f"Síntese do conteúdo:\n{document_summary}\n\n"
+                "A evidência disponível é muito fraca para uma resposta confiável. "
+                "Não posso ajudar com essa pergunta no momento.\n\n"
+                "Por favor, procure ajuda humana ou inclua documentos mais específicos na base de conhecimento."
             ),
             "resumo_busca": search_overview,
             "resumo_documento": document_summary,
