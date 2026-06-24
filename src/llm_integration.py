@@ -1,1 +1,1 @@
-# Tarefa 06: Orquestração do RAG e Integração com LLM
+"""Tarefa 06: Orquestracao do RAG e geracao de resposta."""
