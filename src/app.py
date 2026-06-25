@@ -213,47 +213,12 @@ def index_document(raw_text: str, title: str, source: str) -> int:
     return len(embedded_chunks)
 
 
-def search_similar_chunks(query: str, top_k: int = DEFAULT_TOP_K) -> list[dict[str, Any]]:
-    """Busca os chunks mais próximos da pergunta no banco vetorial."""
-    from embeddings import generate_embeddings
-
-    collection = get_collection()
-    if collection.count() == 0:
-        return []
-
-    query_embedding = generate_embeddings([{"texto": query}])[0]["embedding"]
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
-    )
-
-    documents = results.get("documents", [[]])[0]
-    metadatas = results.get("metadatas", [[]])[0]
-    distances = results.get("distances", [[]])[0]
-    ids = results.get("ids", [[]])[0]
-
-    retrieved_chunks = []
-    for chunk_id, document, metadata, distance in zip(ids, documents, metadatas, distances):
-        score = max(0.0, 1.0 - float(distance))
-        retrieved_chunks.append(
-            {
-                "id": chunk_id,
-                "texto": document,
-                "metadata": metadata or {},
-                "distance": float(distance),
-                "score": score,
-            }
-        )
-
-    return retrieved_chunks
-
-
 def generate_answer(question: str) -> dict[str, Any]:
     """Recupera contexto e gera a resposta RAG."""
     from llm_integration import generate_rag_response
+    from retrieval import retrieve_context
 
-    context = search_similar_chunks(question)
+    context = retrieve_context(question, top_k=DEFAULT_TOP_K)
     return generate_rag_response(question, context)
 
 
