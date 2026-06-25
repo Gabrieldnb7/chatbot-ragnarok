@@ -315,7 +315,7 @@ def render_sidebar() -> None:
             st.caption(f"Trechos: {st.session_state.last_ingestion['chunks_count']}")
         else:
             st.markdown(
-                '<div class="rag-panel rag-muted">.</div>',
+                '<div class="rag-panel rag-muted">Nenhum documento ingerido ainda.</div>',
                 unsafe_allow_html=True,
             )
 

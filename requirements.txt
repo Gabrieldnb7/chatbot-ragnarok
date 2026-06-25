@@ -53,3 +53,4 @@ sentence-transformers>=5.0.0
 python-dotenv>=1.1.0
 langchain-google-genai>=2.1.0
 stopwordsiso>=1.0.0
+pymupdf>=1.25.0
