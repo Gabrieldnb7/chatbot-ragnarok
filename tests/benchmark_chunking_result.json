@@ -1,0 +1,126 @@
+{
+  "versao": "baseline",
+  "timestamp": "2026-06-23T12:16:43",
+  "cenarios": {
+    "controle": {
+      "nome": "controle",
+      "texto_len": 843,
+      "tempo_seg": 4.1787,
+      "chunks": {
+        "min": 847,
+        "max": 847,
+        "media": 847.0,
+        "std": 0.0,
+        "total": 1
+      },
+      "abreviacoes": {
+        "total_abreviacoes": 0,
+        "com_artefato_nn": 0,
+        "no_fim_do_chunk": 0,
+        "integridade_pct": 100.0,
+        "artefatos": []
+      },
+      "ruido": {
+        "total_nn_interno": 0,
+        "locais": []
+      },
+      "fronteiras": [
+        "Chunk doc_1014bc3d88e1_chunk_0001: \"Procedimento de recuperação de acesso ao sistema institucional.  O usuário deve\""
+      ],
+      "splits_internos": [
+        "stema institucional.\\n\\nO usuário deve acess",
+        "Esqueci minha senha.\\n\\nEm seguida, deve inf",
+        "ário de redefinição.\\n\\nO link deve ser util",
+        "formado na mensagem.\\n\\nCaso o e-mail não se",
+        "m e lixo eletrônico.\\n\\nDepois da redefiniçã",
+        "aracteres especiais.\\n\\nQuando a conta estiv",
+        "de tentar novamente.\\n\\nSe o\\nbloqueio perman"
+      ]
+    },
+    "abreviacoes": {
+      "nome": "abreviacoes",
+      "texto_len": 480,
+      "tempo_seg": 0.0441,
+      "chunks": {
+        "min": 483,
+        "max": 483,
+        "media": 483.0,
+        "std": 0.0,
+        "total": 1
+      },
+      "abreviacoes": {
+        "total_abreviacoes": 9,
+        "com_artefato_nn": 0,
+        "no_fim_do_chunk": 0,
+        "integridade_pct": 100.0,
+        "artefatos": []
+      },
+      "ruido": {
+        "total_nn_interno": 0,
+        "locais": []
+      },
+      "fronteiras": [
+        "Chunk doc_cd40f4bb3175_chunk_0001: \"O Dr. Carlos Eduardo da Silva compareceu à reunião com a Sra. Maria Aparecida pa\""
+      ],
+      "splits_internos": [
+        "discutir o contrato.\\n\\nO Sr. João Pedro, re",
+        "umentos necessários.\\n\\nO Dr. Silva solicito",
+        "de 30 dias corridos.\\n\\nApós esse período, o",
+        "aticamente renovado.\\n\\nA Sra. Aparecida con",
+        "icipar da licitação.\\n\\nO Dr. Carlos fará a"
+      ]
+    },
+    "longo": {
+      "nome": "longo",
+      "texto_len": 2411,
+      "tempo_seg": 0.0691,
+      "chunks": {
+        "min": 342,
+        "max": 970,
+        "media": 510.3,
+        "std": 216.8,
+        "total": 6
+      },
+      "abreviacoes": {
+        "total_abreviacoes": 0,
+        "com_artefato_nn": 0,
+        "no_fim_do_chunk": 0,
+        "integridade_pct": 100.0,
+        "artefatos": []
+      },
+      "ruido": {
+        "total_nn_interno": 0,
+        "locais": []
+      },
+      "fronteiras": [
+        "Chunk doc_5f9678ebe414_chunk_0001: \"Seção 1: Introdução ao sistema de atendimento institucional.  O sistema de atend\"",
+        "Chunk doc_5f9678ebe414_chunk_0002: \"Este documento descreve os procedimentos operacionais padrão que devem ser segui\"",
+        "Chunk doc_5f9678ebe414_chunk_0003: \"O sistema automaticamente atribuirá um número de protocolo.  A descrição do prob\"",
+        "Chunk doc_5f9678ebe414_chunk_0004: \"A prioridade é definida automaticamente pelo sistema com base na combinação de u\"",
+        "Chunk doc_5f9678ebe414_chunk_0005: \"Chamados de média prioridade têm prazo de 24 horas úteis.  Chamados de baixa pri\"",
+        "Chunk doc_5f9678ebe414_chunk_0006: \"O atendente deve registrar a solução aplicada e o tempo total de atendimento.  C\""
+      ],
+      "splits_internos": [
+        "mento institucional.\\n\\nO sistema de atendim",
+        "ida de cada chamado.\\n\\nEste documento descr",
+        "todos os atendentes.\\n\\nSeção 2: Abertura de",
+        "bertura de chamados.\\n\\nPara abrir um novo c",
+        "e nível de urgência.\\n\\nO sistema\\nautomatica",
+        "número de protocolo.\\n\\nA descrição do probl",
+        "número de protocolo.\\n\\nA descrição do probl",
+        "er clara e objetiva.\\n\\nEvite termos\\ntécnico",
+        "icos desnecessários.\\n\\nInclua o passo a pas",
+        "é o\\nmomento do erro.\\n\\nInforme também qual"
+      ]
+    }
+  },
+  "agregado": {
+    "total_chunks": 8,
+    "abreviacoes_total": 9,
+    "abreviacoes_com_artefato": 0,
+    "abreviacoes_quebradas": 0,
+    "abreviacoes_integridade_pct": 100.0,
+    "ruido_nn_interno": 0,
+    "tempo_total_seg": 4.2919
+  }
+}
