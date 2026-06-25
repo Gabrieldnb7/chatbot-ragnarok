@@ -55,3 +55,4 @@ langchain-google-genai>=2.1.0
 langchain-openai>=0.3.0
 stopwordsiso>=0.5.1
 pymupdf>=1.25.0
+streamlit>=1.40.0
