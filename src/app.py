@@ -266,10 +266,10 @@ def render_sidebar() -> None:
         st.header("Base de conhecimento")
         st.markdown("Carregue um documento ou cole um texto para ingestão.")
 
-        uploaded_file = st.file_uploader(
-            "Documento",
+        uploaded_files = st.file_uploader(
+            "Documentos",
             type=SUPPORTED_UPLOAD_TYPES,
-            accept_multiple_files=False,
+            accept_multiple_files=True,
         )
         document_title = st.text_input("Título do documento", value="Documento carregado")
         document_source = st.text_input("Fonte original", value="documento")
@@ -281,22 +281,39 @@ def render_sidebar() -> None:
 
         if st.button("Ingerir documento", use_container_width=True):
             try:
-                raw_text = ""
-                source = document_source.strip() or "documento"
+                default_source = document_source.strip() or "documento"
 
-                if uploaded_file is not None:
-                    raw_text = _extract_text_from_upload(uploaded_file).strip()
-                    if not document_source.strip():
-                        source = uploaded_file.name or source
+                if uploaded_files:
+                    total_chunks = 0
+                    total_files = 0
+                    errors = []
+                    for uploaded_file in uploaded_files:
+                        try:
+                            raw_text = _extract_text_from_upload(uploaded_file).strip()
+                            if not raw_text:
+                                continue
+                            source = uploaded_file.name or default_source
+                            title = document_title.strip() or uploaded_file.name or "Documento"
+                            with st.spinner(f"Processando {uploaded_file.name}..."):
+                                chunks_count = index_document(raw_text, title, source)
+                            total_chunks += chunks_count
+                            total_files += 1
+                        except Exception as e:
+                            errors.append(f"{uploaded_file.name}: {e}")
+
+                    if total_files > 0:
+                        st.success(f"{total_files} documento(s) ingeridos. {total_chunks} trechos indexados.")
+                    if errors:
+                        for err in errors:
+                            st.error(err)
                 else:
                     raw_text = sample_text.strip()
-
-                if not raw_text:
-                    st.warning("Forneça um arquivo ou cole um texto para ingestão.")
-                else:
-                    with st.spinner("Processando e indexando documento..."):
-                        chunks_count = index_document(raw_text, document_title, source)
-                    st.success(f"Documento ingerido com sucesso. {chunks_count} trechos indexados.")
+                    if not raw_text:
+                        st.warning("Forneça um arquivo ou cole um texto para ingestão.")
+                    else:
+                        with st.spinner("Processando e indexando documento..."):
+                            chunks_count = index_document(raw_text, document_title, default_source)
+                        st.success(f"Documento ingerido com sucesso. {chunks_count} trechos indexados.")
             except Exception as exc:
                 st.error(f"Falha na ingestão: {exc}")
 
