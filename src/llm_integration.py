@@ -18,6 +18,11 @@ try:
 except ImportError:  # pragma: no cover - permite fallback sem dependencia instalada
     _ChatGoogleGenerativeAI = None
 
+try:
+    from langchain_openai import ChatOpenAI as _ChatOpenAI
+except ImportError:
+    _ChatOpenAI = None
+
 from stopwordsiso import stopwords as _iso_stopwords
 
 DEFAULT_SCORE_THRESHOLD = 0.12
@@ -25,6 +30,8 @@ MAX_EXCERPT_LENGTH = 320
 MAX_SENTENCES_PER_SUMMARY = 8
 MAX_FACTS_PER_GROUP = 8
 DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
+DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
 if load_dotenv is not None:
     load_dotenv()
@@ -58,6 +65,17 @@ def _gemini_config() -> Dict[str, str]:
     return {
         "api_key": api_key,
         "model": os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL,
+    }
+
+
+def _deepseek_config() -> Dict[str, str]:
+    """Lê configuração do DeepSeek das variáveis de ambiente."""
+    api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+    if not api_key:
+        return {}
+    return {
+        "api_key": api_key,
+        "model": os.getenv("DEEPSEEK_MODEL", DEFAULT_DEEPSEEK_MODEL).strip() or DEFAULT_DEEPSEEK_MODEL,
     }
 
 
@@ -131,7 +149,45 @@ def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) ->
         return ""
 
 
+def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) -> str:
+    """Chama o DeepSeek via API compatível com OpenAI."""
+    config = _deepseek_config()
+    if not config or _ChatOpenAI is None:
+        return ""
+
+    prompt = _build_provider_prompt(query, retrieved_context)
+    try:
+        llm = _ChatOpenAI(
+            api_key=config["api_key"],
+            model=config["model"],
+            base_url=DEEPSEEK_BASE_URL,
+            temperature=0.1,
+            max_tokens=900,
+        )
+        response = llm.invoke([
+            (
+                "system",
+                "Você é um assistente especializado exclusivamente em PGD "
+                "(Programa de Gestão de Desempenho). Você NÃO possui conhecimento "
+                "externo. Responda SOMENTE se o contexto abaixo tiver informação "
+                "suficiente. Se a pergunta for sobre outro assunto, diga que não "
+                "pode ajudar. Sempre cite a fonte no formato [Fonte: id]. "
+                "Não invente artigos, prazos ou valores.",
+            ),
+            ("human", prompt),
+        ])
+        return str(getattr(response, "content", response)).strip()
+    except Exception:
+        return ""
+
+
 def _call_configured_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) -> tuple[str, str]:
+    # Tenta DeepSeek primeiro (v4-flash)
+    deepseek_answer = _call_deepseek_llm(query, retrieved_context)
+    if deepseek_answer:
+        return deepseek_answer, "deepseek"
+
+    # Fallback para Gemini
     gemini_answer = _call_gemini_llm(query, retrieved_context)
     if gemini_answer:
         return gemini_answer, "gemini"
