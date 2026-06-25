@@ -219,7 +219,8 @@ def generate_answer(question: str) -> dict[str, Any]:
     from retrieval import retrieve_context
 
     context = retrieve_context(question, top_k=DEFAULT_TOP_K)
-    return generate_rag_response(question, context)
+    llm_config = st.session_state.get("llm_config")
+    return generate_rag_response(question, context, llm_config)
 
 
 def _render_scrollable_text(text: str) -> None:
@@ -302,6 +303,39 @@ def render_sidebar() -> None:
         if st.button("Limpar conversa", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
+
+        with st.expander("⚙️ Configurações do LLM", expanded=False):
+            provider = st.selectbox(
+                "Provedor",
+                ["deepseek", "gemini", "local"],
+                index=0,
+                key="llm_provider",
+            )
+            model = st.text_input(
+                "Modelo",
+                value=st.session_state.get("llm_model", "deepseek-chat"),
+                key="llm_model",
+            )
+            api_key = st.text_input(
+                "API Key",
+                type="password",
+                value=st.session_state.get("llm_api_key", ""),
+                key="llm_api_key",
+            )
+
+            if provider == "local":
+                st.caption("Modo local: respostas analíticas sem API. Nenhuma chave necessária.")
+                st.session_state.pop("llm_config", None)
+            else:
+                if api_key:
+                    st.session_state.llm_config = {
+                        "provider": provider,
+                        "model": model,
+                        "api_key": api_key,
+                    }
+                else:
+                    st.session_state.pop("llm_config", None)
+                    st.caption(f"Defina a API Key ou configure a env {provider.upper()}_API_KEY")
 
         st.divider()
         try:

@@ -119,16 +119,21 @@ def _build_provider_prompt(query: str, retrieved_context: Sequence[Dict[str, Any
     )
 
 
-def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) -> str:
-    config = _gemini_config()
+def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], config_override: dict = None) -> str:
+    config = config_override or _gemini_config()
     if not config or _ChatGoogleGenerativeAI is None:
+        return ""
+
+    api_key = config.get("api_key", "")
+    model = config.get("model", DEFAULT_GEMINI_MODEL)
+    if not api_key:
         return ""
 
     prompt = _build_provider_prompt(query, retrieved_context)
     try:
         llm = _ChatGoogleGenerativeAI(
-            google_api_key=config["api_key"],
-            model=config["model"],
+            google_api_key=api_key,
+            model=model,
             temperature=0.1,
             max_output_tokens=900,
         )
@@ -149,17 +154,22 @@ def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) ->
         return ""
 
 
-def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) -> str:
+def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], config_override: dict = None) -> str:
     """Chama o DeepSeek via API compatível com OpenAI."""
-    config = _deepseek_config()
+    config = config_override or _deepseek_config()
     if not config or _ChatOpenAI is None:
+        return ""
+
+    api_key = config.get("api_key", "")
+    model = config.get("model", DEFAULT_DEEPSEEK_MODEL)
+    if not api_key:
         return ""
 
     prompt = _build_provider_prompt(query, retrieved_context)
     try:
         llm = _ChatOpenAI(
-            api_key=config["api_key"],
-            model=config["model"],
+            api_key=api_key,
+            model=model,
             base_url=DEEPSEEK_BASE_URL,
             temperature=0.1,
             max_tokens=900,
@@ -181,16 +191,20 @@ def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) 
         return ""
 
 
-def _call_configured_llm(query: str, retrieved_context: Sequence[Dict[str, Any]]) -> tuple[str, str]:
-    # Tenta DeepSeek primeiro (v4-flash)
-    deepseek_answer = _call_deepseek_llm(query, retrieved_context)
-    if deepseek_answer:
-        return deepseek_answer, "deepseek"
+def _call_configured_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], llm_config: dict = None) -> tuple[str, str]:
+    provider = (llm_config or {}).get("provider", "")
 
-    # Fallback para Gemini
-    gemini_answer = _call_gemini_llm(query, retrieved_context)
-    if gemini_answer:
-        return gemini_answer, "gemini"
+    if provider == "deepseek" or (not provider and _deepseek_config()):
+        deepseek_config = llm_config if provider == "deepseek" else None
+        deepseek_answer = _call_deepseek_llm(query, retrieved_context, deepseek_config)
+        if deepseek_answer:
+            return deepseek_answer, "deepseek"
+
+    if provider == "gemini" or (not provider and _gemini_config()):
+        gemini_config = llm_config if provider == "gemini" else None
+        gemini_answer = _call_gemini_llm(query, retrieved_context, gemini_config)
+        if gemini_answer:
+            return gemini_answer, "gemini"
 
     return "", "local"
 
@@ -473,13 +487,13 @@ def _build_search_overview(query: str, retrieved_context: Sequence[Dict[str, Any
     return f"Busquei a pergunta '{query}' priorizando os trechos mais próximos semanticamente e, em seguida, refinei com termos em comum. Fontes priorizadas: {source_block}."
 
 
-def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]]) -> Dict[str, str]:
+def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]], llm_config: dict = None) -> Dict[str, str]:
     search_overview = _build_search_overview(query, retrieved_context)
     document_summary = _build_document_summary(query, retrieved_context)
     supporting_sentences = _select_supporting_sentences(query, retrieved_context)
     facts = _extract_key_facts(_collect_document_text(retrieved_context))
     section_insights = _extract_section_insights(retrieved_context)
-    llm_answer, llm_provider = _call_configured_llm(query, retrieved_context)
+    llm_answer, llm_provider = _call_configured_llm(query, retrieved_context, llm_config)
 
     source_lines = []
     for index, chunk in enumerate(retrieved_context, start=1):
@@ -545,8 +559,15 @@ def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]]
     }
 
 
-def generate_rag_response(query: str, retrieved_context: list) -> dict:
-    """Gera uma resposta fundamentada nos contextos recuperados."""
+def generate_rag_response(query: str, retrieved_context: list, llm_config: dict = None) -> dict:
+    """Gera uma resposta fundamentada nos contextos recuperados.
+    
+    Args:
+        query: Pergunta do usuário.
+        retrieved_context: Lista de chunks retornados pelo retrieval.
+        llm_config: Opcional. Dict com provider, model, api_key para
+                    sobrepor as variáveis de ambiente.
+    """
     if not isinstance(query, str):
         raise TypeError("query deve ser uma string.")
     if not isinstance(retrieved_context, list):
@@ -595,7 +616,7 @@ def generate_rag_response(query: str, retrieved_context: list) -> dict:
             "confianca": round(top_score, 4),
         }
 
-    response_parts = _build_analytical_answer(query, retrieved_context)
+    response_parts = _build_analytical_answer(query, retrieved_context, llm_config)
     return {
         "resposta_gerada": response_parts["resposta_gerada"],
         "resumo_busca": response_parts["resumo_busca"],
@@ -609,9 +630,9 @@ def generate_rag_response(query: str, retrieved_context: list) -> dict:
     }
 
 
-def generate_response(query: str, retrieved_context: list) -> dict:
+def generate_response(query: str, retrieved_context: list, llm_config: dict = None) -> dict:
     """Alias compatível com a interface."""
-    return generate_rag_response(query, retrieved_context)
+    return generate_rag_response(query, retrieved_context, llm_config)
 
 
 if __name__ == "__main__":  # pragma: no cover - teste manual
