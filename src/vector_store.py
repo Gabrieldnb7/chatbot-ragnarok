@@ -20,8 +20,12 @@ def store_in_vector_db(embedded_chunks: list) -> bool:
     try:
         # Inicializa o ChromaDB com persistência em disco (evitando perda de dados) 
         # e desativa o envio de telemetria padrão para não expor a base.
+        from pathlib import Path
+        db_path = str(
+            Path(__file__).resolve().parent.parent / "data" / "vector_db" / "chroma_data"
+        )
         client = chromadb.PersistentClient(
-            path="../data/vector_db/chroma_data",
+            path=db_path,
             settings=Settings(anonymized_telemetry=False)    
         )
 

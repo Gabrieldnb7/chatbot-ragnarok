@@ -25,7 +25,10 @@ def _get_collection():
     global _chroma_client
     if _chroma_client is None:
         from chromadb.config import Settings
-        db_path = "../data/vector_db/chroma_data"
+        from pathlib import Path
+        db_path = str(
+            Path(__file__).resolve().parent.parent / "data" / "vector_db" / "chroma_data"
+        )
         _chroma_client = chromadb.PersistentClient(
             path=db_path, settings=Settings(anonymized_telemetry=False)
         )
