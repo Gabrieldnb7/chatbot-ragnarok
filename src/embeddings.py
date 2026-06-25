@@ -12,34 +12,11 @@
 # computacional. O "v2" indica melhorias no treinamento contrastivo
 # (siamese networks com triplet loss / cosine similarity loss).
 
-from sentence_transformers import SentenceTransformer
+from model_cache import get_sentence_transformer
 
 # CONFIGURAÇÃO
 
 MODEL_NAME = "all-MiniLM-L6-V2"
-
-# Cache do modelo em memória para evitar recarregar a cada chamada.
-# O SentenceTransformer automaticamente faz download do modelo no
-# cache do HuggingFace (~/.cache/huggingface/hub/) na primeira execução.
-_model = None
-
-
-def _get_model() -> SentenceTransformer:
-    """Carrega e retorna o modelo de embeddings com cache em memória.
-
-    Usamos o padrão **Lazy Initialization**: o modelo só é carregado quando
-    a primeira chamada a generate_embeddings() ocorre. Isso evita o custo
-    de download e carregamento do modelo (~80 MB) em módulos que apenas
-    importam o arquivo sem chamar a função.
-
-    Returns:
-        SentenceTransformer: Modelo pronto para gerar embeddings.
-    """
-    global _model
-    if _model is None:
-        _model = SentenceTransformer(MODEL_NAME)
-    return _model
-
 
 # FUNÇÃO PRINCIPAL
 
@@ -115,10 +92,10 @@ def generate_embeddings(chunks_list: list) -> list:
             )
         textos.append(chunk["texto"])
 
-    # Carregamento do modelo (lazy) e geração dos embeddings em batch
+    # Carregamento do modelo (cache compartilhado com chunking.py)
 
     try:
-        model = _get_model()
+        model = get_sentence_transformer()
     except Exception as exc:
         raise RuntimeError(
             f"Não foi possível carregar o modelo '{MODEL_NAME}'. "

@@ -40,21 +40,10 @@ _semantic_model = None
 
 
 def _get_semantic_model():
-    """Carrega o modelo semântico apenas quando ele for necessário."""
-    global _semantic_model
-
-    if _semantic_model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError(
-                "Não foi possível importar sentence_transformers. "
-                "Execute: pip install -r requirements.txt"
-            ) from exc
-
-        _semantic_model = SentenceTransformer(SEMANTIC_MODEL_NAME)
-
-    return _semantic_model
+    """DEPRECATED: use model_cache.get_sentence_transformer().
+    Mantido apenas para não quebrar imports externos."""
+    from model_cache import get_sentence_transformer
+    return get_sentence_transformer()
 
 
 def _generate_doc_id(metadata: dict, cleaned_text: str) -> str:
