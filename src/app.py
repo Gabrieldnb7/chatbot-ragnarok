@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import html
-from datetime import datetime, timezone
-from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +13,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VECTOR_DB_PATH = PROJECT_ROOT / "data" / "vector_db" / "chroma_data"
 COLLECTION_NAME = "ragnarok_knowledge_base"
 DEFAULT_TOP_K = 5
-SUPPORTED_UPLOAD_TYPES = ["txt", "md", "csv", "log", "pdf"]
 
 
 def _inject_styles() -> None:
@@ -23,56 +20,197 @@ def _inject_styles() -> None:
         """
         <style>
         :root { color-scheme: dark; }
-        .stApp { background: #0b0d12; color: #f3f4f6; }
-        [data-testid="stSidebar"] {
-            background: #1b1d26;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        .stApp { background: #000000; color: #f3f4f6; }
+        .main .block-container {
+            max-width: 100%;
+            padding: 1.3rem 2rem 7rem;
         }
-        [data-testid="stSidebar"] .stButton button,
+        [data-testid="stHeader"],
+        [data-testid="stToolbar"] {
+            background: transparent;
+        }
         .stButton button,
         .stForm button { border-radius: 8px; }
-        .rag-panel {
-            background: #11131a;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 1rem 1.1rem;
+        .rag-chat-wrap {
+            max-width: 760px;
+            height: calc(100vh - 2.6rem);
+            margin: 0 auto;
+            padding: 0 0 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .rag-chat-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            text-align: center;
+            padding: 1.15rem 0 0.85rem;
+            background: linear-gradient(180deg, #000 72%, rgba(0, 0, 0, 0));
+        }
+        .rag-chat-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0.25rem 7rem;
+            scroll-behavior: smooth;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+        }
+        .rag-chat-bottom {
+            height: 1px;
+            width: 100%;
         }
         .rag-title {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1.1;
+            font-size: 1.55rem;
+            font-weight: 750;
+            line-height: 1.15;
             margin-bottom: 0.35rem;
         }
         .rag-subtitle {
-            color: rgba(243, 244, 246, 0.7);
-            font-size: 0.95rem;
+            color: rgba(243, 244, 246, 0.62);
+            font-size: 0.92rem;
+            margin: 0 auto;
+            max-width: 560px;
+        }
+        .rag-empty-state {
+            color: rgba(243, 244, 246, 0.86);
+            font-size: 1.35rem;
+            font-weight: 520;
+            text-align: center;
+            padding: 32vh 1rem 0;
+        }
+        .rag-side-panel {
+            min-height: auto;
+            border-radius: 12px;
+            padding: 1rem 0.95rem;
+            background: rgba(8, 9, 12, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            position: sticky;
+            top: 1rem;
+        }
+        .rag-side-title {
+            font-size: 1rem;
+            font-weight: 750;
+            margin-bottom: 0.55rem;
+        }
+        .rag-side-kicker {
+            color: rgba(243, 244, 246, 0.58);
+            font-size: 0.82rem;
+            line-height: 1.4;
             margin-bottom: 1rem;
         }
         .rag-muted { color: rgba(243, 244, 246, 0.72); font-size: 0.92rem; }
-        .rag-status {
-            background: #0f3a5d;
-            color: #d7eafe;
-            border-radius: 10px;
-            padding: 0.9rem 1rem;
-            margin-top: 0.8rem;
+        .rag-message-row {
+            display: flex;
+            margin: 1.05rem 0;
+            width: 100%;
         }
-        .rag-answer-box {
-            max-height: 380px;
-            overflow-y: auto;
-            background: #10131b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 1rem 1.1rem;
+        .rag-message-row.user { justify-content: flex-end; }
+        .rag-message-row.assistant { justify-content: flex-start; }
+        .rag-message {
+            max-width: 86%;
+            line-height: 1.68;
+            font-size: 1rem;
             white-space: pre-wrap;
-            line-height: 1.7;
-            font-size: 1.01rem;
+            overflow-wrap: anywhere;
         }
-        .rag-mini-card {
+        .rag-message.user {
+            background: #2f3037;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 0.72rem 0.95rem;
+            color: #f3f4f6;
+        }
+        .rag-message.assistant {
+            color: #f3f4f6;
+            padding: 0.2rem 0;
+        }
+        .rag-mini-card,
+        .rag-rank-card {
             background: #0f131b;
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
             padding: 0.9rem 1rem;
             margin-top: 0.8rem;
+        }
+        .rag-mini-title {
+            color: #f3f4f6;
+            font-weight: 750;
+            margin-bottom: 0.35rem;
+        }
+        .rag-mini-body {
+            color: rgba(243, 244, 246, 0.78);
+            line-height: 1.55;
+        }
+        .rag-rank-card {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .rag-rank-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.45rem;
+        }
+        .rag-rank-number {
+            color: #d7eafe;
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        .rag-score {
+            background: rgba(15, 58, 93, 0.9);
+            color: #d7eafe;
+            border-radius: 999px;
+            padding: 0.18rem 0.55rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .rag-rank-title {
+            color: #f3f4f6;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 0.25rem;
+        }
+        .rag-rank-source,
+        .rag-rank-preview {
+            color: rgba(243, 244, 246, 0.72);
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+        [data-testid="stChatInput"] {
+            position: fixed;
+            left: 50%;
+            right: auto;
+            bottom: 1.35rem;
+            width: min(760px, calc(100vw - 33rem));
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+        [data-testid="stChatInput"] > div {
+            border-radius: 22px;
+            background: #202123;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+        }
+        @media (max-width: 1100px) {
+            [data-testid="stChatInput"] {
+                width: min(760px, calc(100vw - 2rem));
+            }
+            .rag-side-panel {
+                min-height: auto;
+                position: static;
+            }
+        }
+        @media (max-width: 900px) {
+            .main .block-container { padding: 1rem 1rem 7rem; }
+            [data-testid="stChatInput"] {
+                left: 1rem;
+                right: 1rem;
+                width: auto;
+                transform: none;
+                bottom: 1rem;
+            }
         }
         </style>
         """,
@@ -82,7 +220,9 @@ def _inject_styles() -> None:
 
 def _ensure_state() -> None:
     st.session_state.setdefault("messages", [])
-    st.session_state.setdefault("last_ingestion", None)
+    st.session_state.setdefault("last_top_k", [])
+    st.session_state.setdefault("last_question", "")
+    st.session_state.setdefault("pending_prompt", None)
 
 
 @st.cache_resource(show_spinner=False)
@@ -101,131 +241,23 @@ def get_collection():
     )
 
 
-def decode_text_file(raw_content: bytes) -> str:
-    """Decodifica arquivos textuais enviados pela interface."""
-    for encoding in ("utf-8", "latin-1", "cp1252"):
-        try:
-            return raw_content.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-
-    return raw_content.decode("utf-8", errors="replace")
-
-
-def extract_pdf_text(raw_content: bytes) -> str:
-    """Extrai texto de PDF usando bibliotecas opcionais, se estiverem instaladas."""
+def get_indexed_count() -> int:
     try:
-        import fitz  # type: ignore
+        return int(get_collection().count())
     except Exception:
-        fitz = None
-
-    if fitz is not None:
-        try:
-            document = fitz.open(stream=raw_content, filetype="pdf")
-            pages = []
-            for index, page in enumerate(document, start=1):
-                page_text = (page.get_text("text") or "").strip()
-                if page_text:
-                    pages.append(f"\n\n[Página {index}]\n{page_text}")
-            if pages:
-                return "\n".join(pages)
-        except Exception:
-            pass
-
-    PdfReader = None
-    try:
-        from pypdf import PdfReader as PypdfReader  # type: ignore
-
-        PdfReader = PypdfReader
-    except Exception:
-        try:
-            from PyPDF2 import PdfReader as PyPdf2Reader  # type: ignore
-
-            PdfReader = PyPdf2Reader
-        except Exception as exc:
-            raise RuntimeError(
-                "Para importar PDF, instale uma biblioteca de leitura de PDF: pymupdf, pypdf ou PyPDF2."
-            ) from exc
-
-    pages = []
-    reader = PdfReader(BytesIO(raw_content))
-    for index, page in enumerate(reader.pages, start=1):
-        page_text = (page.extract_text() or "").strip()
-        if page_text:
-            pages.append(f"\n\n[Página {index}]\n{page_text}")
-
-    return "\n".join(pages)
-
-
-def _extract_text_from_upload(uploaded_file) -> str:
-    """Extrai texto dos mesmos formatos aceitos pelo layout de referencia."""
-    if uploaded_file is None:
-        return ""
-
-    raw_content = uploaded_file.getvalue()
-    file_suffix = Path(uploaded_file.name or "").suffix.lower()
-
-    if file_suffix == ".pdf":
-        text = extract_pdf_text(raw_content)
-    elif file_suffix in {".txt", ".md", ".csv", ".log"}:
-        text = decode_text_file(raw_content)
-    else:
-        supported = ", ".join(SUPPORTED_UPLOAD_TYPES)
-        raise RuntimeError(f"Tipo de arquivo não suportado. Use: {supported}.")
-
-    if not text.strip():
-        raise RuntimeError("Não foi possível extrair texto do arquivo enviado.")
-
-    return text
-
-
-def index_document(raw_text: str, title: str, source: str) -> int:
-    """Executa ingestão, chunking, embedding e persistência no Chroma."""
-    from chunking import chunk_document
-    from embeddings import generate_embeddings
-    from ingestion import ingest_and_anonymize
-
-    cleaned_text = ingest_and_anonymize(raw_text)
-    metadata = {
-        "titulo": title.strip() or "Documento sem título",
-        "fonte": source.strip() or "Entrada manual",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-    chunks = chunk_document(cleaned_text, metadata)
-    embedded_chunks = generate_embeddings(chunks)
-
-    if not embedded_chunks:
         return 0
-
-    collection = get_collection()
-    collection.upsert(
-        ids=[chunk["id"] for chunk in embedded_chunks],
-        embeddings=[chunk["embedding"] for chunk in embedded_chunks],
-        documents=[chunk["texto"] for chunk in embedded_chunks],
-        metadatas=[chunk.get("metadata", {}) for chunk in embedded_chunks],
-    )
-
-    st.session_state.last_ingestion = {
-        "titulo": metadata["titulo"],
-        "fonte": metadata["fonte"],
-        "chunks_count": len(embedded_chunks),
-    }
-    return len(embedded_chunks)
 
 
 def generate_answer(question: str) -> dict[str, Any]:
-    """Recupera contexto e gera a resposta RAG."""
+    """Recupera contexto, registra o top-k e gera a resposta RAG."""
     from llm_integration import generate_rag_response
     from retrieval import retrieve_context
 
     context = retrieve_context(question, top_k=DEFAULT_TOP_K)
+    st.session_state.last_top_k = context
+    st.session_state.last_question = question
     llm_config = st.session_state.get("llm_config")
     return generate_rag_response(question, context, llm_config)
-
-
-def _render_scrollable_text(text: str) -> None:
-    safe_text = html.escape(text or "")
-    st.markdown(f'<div class="rag-answer-box">{safe_text}</div>', unsafe_allow_html=True)
 
 
 def _render_result_details(response: dict[str, Any]) -> None:
@@ -247,139 +279,222 @@ def _render_result_details(response: dict[str, Any]) -> None:
         st.write(response["analise_documento"])
         st.markdown("</div>", unsafe_allow_html=True)
 
-    sources = response.get("fontes") or []
-    if sources:
-        with st.expander(f"Fontes consultadas ({len(sources)})"):
-            for index, chunk in enumerate(sources, start=1):
-                metadata = chunk.get("metadata", {}) if isinstance(chunk, dict) else {}
-                title = metadata.get("titulo") or "Documento"
-                source = metadata.get("fonte") or "documento"
-                score = chunk.get("score") if isinstance(chunk, dict) else None
-                text = (chunk.get("texto", "") if isinstance(chunk, dict) else "").strip()
-                score_line = f"\nScore: {float(score):.4f}" if isinstance(score, (int, float)) else ""
-                source_text = f"Fonte {index}: {title}\nOrigem: {source}{score_line}\n\nTrecho:\n{text}"
-                _render_scrollable_text(source_text)
+
+def _clear_conversation() -> None:
+    st.session_state.messages = []
+    st.session_state.last_top_k = []
+    st.session_state.last_question = ""
+    st.rerun()
 
 
-def render_sidebar() -> None:
-    with st.sidebar:
-        st.header("Base de conhecimento")
-        st.markdown("Carregue um documento ou cole um texto para ingestão.")
+def render_metrics_panel() -> None:
+    st.markdown('<div class="rag-side-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="rag-side-title">Métricas</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="rag-side-kicker">Indicadores da base vetorial do projeto.</div>',
+        unsafe_allow_html=True,
+    )
+    st.metric("Chunks gerados", get_indexed_count())
+    st.caption(f"Coleção: {COLLECTION_NAME}")
 
-        uploaded_files = st.file_uploader(
-            "Documentos",
-            type=SUPPORTED_UPLOAD_TYPES,
-            accept_multiple_files=True,
+    if st.button("Limpar conversa", use_container_width=True):
+        _clear_conversation()
+
+    with st.expander("Configurações do LLM", expanded=False):
+        provider = st.selectbox(
+            "Provedor",
+            ["deepseek", "gemini", "local"],
+            index=0,
+            key="llm_provider",
         )
-        document_title = st.text_input("Título do documento", value="Documento carregado")
-        document_source = st.text_input("Fonte original", value="documento")
-        sample_text = st.text_area(
-            "Ou cole um texto para ingestão rápida",
-            height=170,
-            placeholder="Cole aqui o conteúdo bruto do documento...",
+        model = st.text_input(
+            "Modelo",
+            value=st.session_state.get("llm_model", "deepseek-chat"),
+            key="llm_model",
+        )
+        api_key = st.text_input(
+            "API Key",
+            type="password",
+            value=st.session_state.get("llm_api_key", ""),
+            key="llm_api_key",
         )
 
-        if st.button("Ingerir documento", use_container_width=True):
-            try:
-                default_source = document_source.strip() or "documento"
-
-                if uploaded_files:
-                    total_chunks = 0
-                    total_files = 0
-                    errors = []
-                    for uploaded_file in uploaded_files:
-                        try:
-                            raw_text = _extract_text_from_upload(uploaded_file).strip()
-                            if not raw_text:
-                                continue
-                            source = uploaded_file.name or default_source
-                            title = document_title.strip() or uploaded_file.name or "Documento"
-                            with st.spinner(f"Processando {uploaded_file.name}..."):
-                                chunks_count = index_document(raw_text, title, source)
-                            total_chunks += chunks_count
-                            total_files += 1
-                        except Exception as e:
-                            errors.append(f"{uploaded_file.name}: {e}")
-
-                    if total_files > 0:
-                        st.success(f"{total_files} documento(s) ingeridos. {total_chunks} trechos indexados.")
-                    if errors:
-                        for err in errors:
-                            st.error(err)
-                else:
-                    raw_text = sample_text.strip()
-                    if not raw_text:
-                        st.warning("Forneça um arquivo ou cole um texto para ingestão.")
-                    else:
-                        with st.spinner("Processando e indexando documento..."):
-                            chunks_count = index_document(raw_text, document_title, default_source)
-                        st.success(f"Documento ingerido com sucesso. {chunks_count} trechos indexados.")
-            except Exception as exc:
-                st.error(f"Falha na ingestão: {exc}")
-
-        if st.button("Limpar conversa", use_container_width=True):
-            st.session_state.messages = []
-            st.rerun()
-
-        with st.expander("⚙️ Configurações do LLM", expanded=False):
-            provider = st.selectbox(
-                "Provedor",
-                ["deepseek", "gemini", "local"],
-                index=0,
-                key="llm_provider",
-            )
-            model = st.text_input(
-                "Modelo",
-                value=st.session_state.get("llm_model", "deepseek-chat"),
-                key="llm_model",
-            )
-            api_key = st.text_input(
-                "API Key",
-                type="password",
-                value=st.session_state.get("llm_api_key", ""),
-                key="llm_api_key",
-            )
-
-            if provider == "local":
-                st.caption("Modo local: respostas analíticas sem API. Nenhuma chave necessária.")
-                st.session_state.pop("llm_config", None)
-            else:
-                if api_key:
-                    st.session_state.llm_config = {
-                        "provider": provider,
-                        "model": model,
-                        "api_key": api_key,
-                    }
-                else:
-                    st.session_state.pop("llm_config", None)
-                    st.caption(f"Defina a API Key ou configure a env {provider.upper()}_API_KEY")
-
-        st.divider()
-        try:
-            indexed_count = get_collection().count()
-        except Exception:
-            indexed_count = 0
-        st.metric("Chunks indexados", indexed_count)
-
-        if st.session_state.last_ingestion:
-            st.caption(f"Última ingestão: {st.session_state.last_ingestion['titulo']}")
-            st.caption(f"Trechos: {st.session_state.last_ingestion['chunks_count']}")
+        if provider == "local":
+            st.caption("Modo local: respostas analíticas sem API. Nenhuma chave necessária.")
+            st.session_state.pop("llm_config", None)
+        elif api_key:
+            st.session_state.llm_config = {
+                "provider": provider,
+                "model": model,
+                "api_key": api_key,
+            }
         else:
-            st.markdown(
-                '<div class="rag-panel rag-muted">Nenhum documento ingerido ainda.</div>',
-                unsafe_allow_html=True,
+            st.session_state.pop("llm_config", None)
+            st.caption(f"Defina a API Key ou configure a env {provider.upper()}_API_KEY")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _score_label(chunk: dict[str, Any]) -> str:
+    score = chunk.get("score")
+    if isinstance(score, (int, float)):
+        return f"{float(score):.4f}"
+    return "--"
+
+
+def _render_rank_card(index: int, chunk: dict[str, Any]) -> None:
+    metadata = chunk.get("metadata", {}) if isinstance(chunk, dict) else {}
+    title = metadata.get("titulo") or "Documento"
+    source = metadata.get("fonte") or "documento"
+    text = (chunk.get("texto", "") if isinstance(chunk, dict) else "").strip()
+    preview = text[:520] + ("..." if len(text) > 520 else "")
+
+    st.markdown(
+        f"""
+        <div class="rag-rank-card">
+            <div class="rag-rank-head">
+                <span class="rag-rank-number">#{index}</span>
+                <span class="rag-score">score {_score_label(chunk)}</span>
+            </div>
+            <div class="rag-rank-title">{html.escape(str(title))}</div>
+            <div class="rag-rank-source">Origem: {html.escape(str(source))}</div>
+            <div class="rag-rank-preview">{html.escape(preview)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_top_k_panel() -> None:
+    st.markdown('<div class="rag-side-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="rag-side-title">Top-k encontrados</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="rag-side-kicker">Ranking dos chunks retornados pela última pergunta, do melhor score para baixo.</div>',
+        unsafe_allow_html=True,
+    )
+
+    top_k = st.session_state.get("last_top_k") or []
+    if not top_k:
+        st.info("Faça uma pergunta para ver os chunks mais relevantes da base.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    if st.session_state.get("last_question"):
+        st.caption(f"Pergunta: {st.session_state.last_question}")
+
+    ranked_chunks = sorted(
+        top_k,
+        key=lambda chunk: float(chunk.get("score", 0.0)) if isinstance(chunk, dict) else 0.0,
+        reverse=True,
+    )
+    for index, chunk in enumerate(ranked_chunks, start=1):
+        _render_rank_card(index, chunk)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _text_to_html(value: Any) -> str:
+    return html.escape(str(value or "")).replace("\n", "<br>")
+
+
+def _response_details_html(response: dict[str, Any] | None) -> str:
+    if not response:
+        return ""
+
+    cards = []
+    detail_labels = (
+        ("resumo_busca", "Resumo da pesquisa"),
+        ("resumo_documento", "Sintese do documento"),
+        ("analise_documento", "Analise do conteudo"),
+    )
+    for key, label in detail_labels:
+        value = response.get(key)
+        if value:
+            cards.append(
+                '<div class="rag-mini-card">'
+                f'<div class="rag-mini-title">{html.escape(label)}</div>'
+                f'<div class="rag-mini-body">{_text_to_html(value)}</div>'
+                '</div>'
             )
+    return "".join(cards)
+
+
+def _chat_message_html(role: str, content: str, response: dict[str, Any] | None = None) -> str:
+    normalized_role = "user" if role == "user" else "assistant"
+    return (
+        f'<div class="rag-message-row {normalized_role}">'
+        f'<div class="rag-message {normalized_role}">{_text_to_html(content)}</div>'
+        '</div>'
+        + _response_details_html(response if normalized_role == "assistant" else None)
+    )
 
 
 def render_chat_history() -> None:
-    for message in st.session_state.messages:
-        with st.chat_message(message.get("role", "assistant")):
-            if message.get("role") == "assistant":
-                _render_scrollable_text(message.get("content", ""))
-                if message.get("response"):
-                    _render_result_details(message["response"])
-            else:
-                st.markdown(message.get("content", ""))
+    if st.session_state.messages:
+        body = "".join(
+            _chat_message_html(
+                message.get("role", "assistant"),
+                message.get("content", ""),
+                message.get("response"),
+            )
+            for message in st.session_state.messages
+        )
+    else:
+        body = '<div class="rag-empty-state">O que voce quer saber sobre a base?</div>'
+
+    st.markdown(
+        f"""
+        <div class="rag-chat-wrap">
+            <div class="rag-chat-header">
+                <div class="rag-title">Chatbot Ragnarok</div>
+                <div class="rag-subtitle">Analise de documentos com mini-RAG, resposta fundamentada e foco em PT-BR padrao.</div>
+            </div>
+            <div class="rag-chat-scroll">
+                {body}
+                <div class="rag-chat-bottom"></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _auto_scroll_chat() -> None:
+    st.html(
+        """
+        <script>
+        const scrollChatToBottom = () => {
+            const parentDoc = window.parent.document;
+            const scrollArea = parentDoc.querySelector(".rag-chat-scroll");
+            if (!scrollArea) return;
+
+            scrollArea.scrollTo({
+                top: scrollArea.scrollHeight,
+                behavior: "smooth"
+            });
+        };
+
+        const setupAutoScroll = () => {
+            const parentDoc = window.parent.document;
+            const scrollArea = parentDoc.querySelector(".rag-chat-scroll");
+            if (!scrollArea) return;
+
+            if (!scrollArea.dataset.autoScrollReady) {
+                const observer = new MutationObserver(() => {
+                    window.requestAnimationFrame(scrollChatToBottom);
+                });
+                observer.observe(scrollArea, { childList: true, subtree: true });
+                scrollArea.dataset.autoScrollReady = "true";
+            }
+
+            scrollChatToBottom();
+        };
+
+        window.setTimeout(setupAutoScroll, 50);
+        window.setTimeout(scrollChatToBottom, 250);
+        window.setTimeout(scrollChatToBottom, 700);
+        </script>
+        """,
+        unsafe_allow_javascript=True,
+    )
 
 
 def render_chat_interface() -> None:
@@ -387,39 +502,29 @@ def render_chat_interface() -> None:
     _ensure_state()
     _inject_styles()
 
-    left_col, right_col = st.columns([1.75, 1], gap="large")
-    render_sidebar()
+    metrics_col, chat_col, top_k_col = st.columns([0.72, 2.25, 0.9], gap="large")
 
-    with left_col:
-        st.markdown(
-            """<div class="rag-panel">
-                <div class="rag-title">Chatbot Ragnarok</div>
-                <div class="rag-subtitle">Análise de documentos com mini-RAG, resposta fundamentada e foco em PT-BR padrão.</div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+    with metrics_col:
+        render_metrics_panel()
+
+    with chat_col:
         render_chat_history()
+        _auto_scroll_chat()
 
-        prompt = st.chat_input("Pergunte sobre o documento carregado")
-        if prompt:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            with st.chat_message("assistant"):
-                with st.spinner("Buscando contexto e gerando resposta..."):
-                    try:
-                        response = generate_answer(prompt)
-                    except Exception as exc:
-                        response = {
-                            "resposta_gerada": f"Não foi possível responder agora: {exc}",
-                            "fontes": [],
-                            "precisou_triagem": True,
-                            "confianca": 0.0,
-                        }
-                _render_scrollable_text(response["resposta_gerada"])
-                _render_result_details(response)
-
+        pending_prompt = st.session_state.get("pending_prompt")
+        if pending_prompt:
+            with st.spinner("Buscando contexto e gerando resposta..."):
+                try:
+                    response = generate_answer(pending_prompt)
+                except Exception as exc:
+                    st.session_state.last_top_k = []
+                    st.session_state.last_question = pending_prompt
+                    response = {
+                        "resposta_gerada": f"Nao foi possivel responder agora: {exc}",
+                        "fontes": [],
+                        "precisou_triagem": True,
+                        "confianca": 0.0,
+                    }
             st.session_state.messages.append(
                 {
                     "role": "assistant",
@@ -427,23 +532,17 @@ def render_chat_interface() -> None:
                     "response": response,
                 }
             )
+            st.session_state.pending_prompt = None
+            st.rerun()
 
-    with right_col:
-        st.subheader("Status")
-        st.markdown(
-            '<div class="rag-muted">Use a área principal para perguntar sobre os documentos carregados. Se a evidência for fraca, o app marca triagem humana.</div>',
-            unsafe_allow_html=True,
-        )
-        try:
-            indexed_count = get_collection().count()
-        except Exception:
-            indexed_count = 0
+        prompt = st.chat_input("Pergunte sobre os documentos da base")
+        if prompt:
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.session_state.pending_prompt = prompt
+            st.rerun()
 
-        if indexed_count:
-            st.markdown('<div class="rag-status">Base pronta para busca.</div>', unsafe_allow_html=True)
-            st.json({"collection": COLLECTION_NAME, "chunks": indexed_count})
-        else:
-            st.info("Nenhum documento foi ingerido ainda.")
+    with top_k_col:
+        render_top_k_panel()
 
 
 if __name__ == "__main__":
