@@ -18,74 +18,140 @@ DEFAULT_TOP_K = 5
 def _inject_styles() -> None:
     st.markdown(
         """
-        <style>
+                <style>
         :root { color-scheme: dark; }
-        .stApp { background: #000000; color: #f3f4f6; }
+        .stApp {
+            background: #0b141a;
+            color: #e9edef;
+        }
         .main .block-container {
             max-width: 100%;
-            padding: 1.3rem 2rem 7rem;
+            padding: 1rem 1.25rem 6.75rem;
         }
         [data-testid="stHeader"],
         [data-testid="stToolbar"] {
             background: transparent;
         }
         .stButton button,
-        .stForm button { border-radius: 8px; }
+        .stForm button {
+            border-radius: 8px;
+        }
         .rag-chat-wrap {
-            max-width: 760px;
-            height: calc(100vh - 2.6rem);
+            max-width: 820px;
+            height: calc(100vh - 2.2rem);
+            min-height: 0;
             margin: 0 auto;
-            padding: 0 0 1.5rem;
+            padding: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            background: #0b141a;
         }
         .rag-chat-header {
-            position: sticky;
-            top: 0;
+            flex: 0 0 auto;
             z-index: 50;
-            text-align: center;
-            padding: 1.15rem 0 0.85rem;
-            background: linear-gradient(180deg, #000 72%, rgba(0, 0, 0, 0));
+            padding: 0.95rem 0.95rem 0.8rem;
+            background: #202c33;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px 8px 0 0;
         }
         .rag-chat-scroll {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
+            height: 100%;
             overflow-y: auto;
-            padding: 0 0.25rem 7rem;
+            overflow-x: hidden;
+            padding: 1rem 0.95rem 7.25rem;
             scroll-behavior: smooth;
             overscroll-behavior: contain;
+            scrollbar-gutter: stable;
             scrollbar-width: thin;
+            scrollbar-color: rgba(134, 150, 160, 0.55) rgba(255, 255, 255, 0.04);
+            background:
+                linear-gradient(rgba(11, 20, 26, 0.93), rgba(11, 20, 26, 0.93)),
+                repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 18px);
+        }
+        .rag-chat-scroll::-webkit-scrollbar {
+            width: 10px;
+        }
+        .rag-chat-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+        }
+        .rag-chat-scroll::-webkit-scrollbar-thumb {
+            background: rgba(134, 150, 160, 0.55);
+            border-radius: 999px;
+            border: 2px solid #0b141a;
         }
         .rag-chat-bottom {
             height: 1px;
             width: 100%;
         }
         .rag-title {
-            font-size: 1.55rem;
-            font-weight: 750;
-            line-height: 1.15;
-            margin-bottom: 0.35rem;
+            font-size: 1.02rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0.18rem;
+            color: #e9edef;
         }
         .rag-subtitle {
-            color: rgba(243, 244, 246, 0.62);
-            font-size: 0.92rem;
-            margin: 0 auto;
-            max-width: 560px;
+            color: #8696a0;
+            font-size: 0.82rem;
+            line-height: 1.35;
         }
         .rag-empty-state {
-            color: rgba(243, 244, 246, 0.86);
-            font-size: 1.35rem;
+            color: #d1d7db;
+            font-size: 1.2rem;
             font-weight: 520;
             text-align: center;
-            padding: 32vh 1rem 0;
+            padding: 24vh 1rem 0;
         }
         .rag-side-panel {
-            min-height: auto;
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1rem 0.95rem;
             background: rgba(8, 9, 12, 0.72);
             border: 1px solid rgba(255, 255, 255, 0.07);
             position: sticky;
             top: 1rem;
+        }
+        .rag-topk-panel {
+            height: calc(100vh - 2.2rem);
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+            background: #05090c;
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .rag-topk-header {
+            flex: 0 0 auto;
+            padding: 0.95rem 0.95rem 0.75rem;
+            background: #0b141a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .rag-topk-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.75rem 0.95rem 0.95rem;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(134, 150, 160, 0.55) rgba(255, 255, 255, 0.04);
+        }
+        .rag-topk-scroll::-webkit-scrollbar {
+            width: 10px;
+        }
+        .rag-topk-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+        }
+        .rag-topk-scroll::-webkit-scrollbar-thumb {
+            background: rgba(134, 150, 160, 0.55);
+            border-radius: 999px;
+            border: 2px solid #0b141a;
         }
         .rag-side-title {
             font-size: 1rem;
@@ -98,39 +164,94 @@ def _inject_styles() -> None:
             line-height: 1.4;
             margin-bottom: 1rem;
         }
-        .rag-muted { color: rgba(243, 244, 246, 0.72); font-size: 0.92rem; }
+        .rag-topk-question {
+            color: #cfd6dc;
+            font-size: 0.82rem;
+            line-height: 1.35;
+            margin-top: 0.72rem;
+            overflow-wrap: anywhere;
+        }
+        .rag-topk-empty {
+            color: #8696a0;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            padding: 0.85rem 0.1rem;
+        }
         .rag-message-row {
             display: flex;
-            margin: 1.05rem 0;
+            margin: 0.28rem 0;
             width: 100%;
         }
         .rag-message-row.user { justify-content: flex-end; }
         .rag-message-row.assistant { justify-content: flex-start; }
         .rag-message {
-            max-width: 86%;
-            line-height: 1.68;
-            font-size: 1rem;
+            position: relative;
+            max-width: min(78%, 620px);
+            line-height: 1.45;
+            font-size: 0.96rem;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
+            padding: 0.52rem 0.72rem 1.22rem;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.22);
         }
         .rag-message.user {
-            background: #2f3037;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 0.72rem 0.95rem;
-            color: #f3f4f6;
+            background: #005c4b;
+            border-radius: 8px 0 8px 8px;
+            color: #e9edef;
+        }
+        .rag-message.user::after {
+            content: "";
+            position: absolute;
+            right: -7px;
+            top: 0;
+            border-top: 8px solid #005c4b;
+            border-right: 8px solid transparent;
         }
         .rag-message.assistant {
-            color: #f3f4f6;
-            padding: 0.2rem 0;
+            background: #202c33;
+            color: #e9edef;
+            border-radius: 0 8px 8px 8px;
         }
+        .rag-message.assistant::before {
+            content: "";
+            position: absolute;
+            left: -7px;
+            top: 0;
+            border-top: 8px solid #202c33;
+            border-left: 8px solid transparent;
+        }
+        .rag-message-meta {
+            position: absolute;
+            right: 0.58rem;
+            bottom: 0.32rem;
+            color: rgba(233, 237, 239, 0.56);
+            font-size: 0.69rem;
+            line-height: 1;
+        }
+        .rag-message.user .rag-message-meta::after {
+            content: "  \2713\2713";
+            color: #53bdeb;
+            letter-spacing: -0.08rem;
+        }
+        .rag-details {
+            margin-top: 0.56rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.5rem;
+        }
+        .rag-details summary {
+            cursor: pointer;
+            color: #53bdeb;
+            font-size: 0.84rem;
+            list-style: none;
+        }
+        .rag-details summary::-webkit-details-marker { display: none; }
         .rag-mini-card,
         .rag-rank-card {
-            background: #0f131b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 0.9rem 1rem;
-            margin-top: 0.8rem;
+            background: rgba(17, 27, 33, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 0.72rem 0.82rem;
+            margin-top: 0.62rem;
         }
         .rag-mini-title {
             color: #f3f4f6;
@@ -142,8 +263,7 @@ def _inject_styles() -> None:
             line-height: 1.55;
         }
         .rag-rank-card {
-            max-height: 260px;
-            overflow-y: auto;
+            overflow: hidden;
         }
         .rag-rank-head {
             display: flex;
@@ -198,7 +318,6 @@ def _inject_styles() -> None:
                 width: min(760px, calc(100vw - 2rem));
             }
             .rag-side-panel {
-                min-height: auto;
                 position: static;
             }
         }
@@ -227,7 +346,7 @@ def _ensure_state() -> None:
 
 @st.cache_resource(show_spinner=False)
 def get_collection():
-    """Retorna a coleção Chroma usada pelo app."""
+    """Retorna a coleÃ§Ã£o Chroma usada pelo app."""
     import chromadb
     from chromadb.config import Settings
 
@@ -256,34 +375,14 @@ def generate_answer(question: str) -> dict[str, Any]:
     context = retrieve_context(question, top_k=DEFAULT_TOP_K)
     st.session_state.last_top_k = context
     st.session_state.last_question = question
-    llm_config = st.session_state.get("llm_config")
-    return generate_rag_response(question, context, llm_config)
-
-
-def _render_result_details(response: dict[str, Any]) -> None:
-    if response.get("resumo_busca"):
-        st.markdown('<div class="rag-mini-card">', unsafe_allow_html=True)
-        st.markdown("**Resumo da pesquisa**")
-        st.write(response["resumo_busca"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if response.get("resumo_documento"):
-        st.markdown('<div class="rag-mini-card">', unsafe_allow_html=True)
-        st.markdown("**Síntese do documento**")
-        st.write(response["resumo_documento"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if response.get("analise_documento"):
-        st.markdown('<div class="rag-mini-card">', unsafe_allow_html=True)
-        st.markdown("**Análise do conteúdo**")
-        st.write(response["analise_documento"])
-        st.markdown("</div>", unsafe_allow_html=True)
+    return generate_rag_response(question, context)
 
 
 def _clear_conversation() -> None:
     st.session_state.messages = []
     st.session_state.last_top_k = []
     st.session_state.last_question = ""
+    st.session_state.pending_prompt = None
     st.rerun()
 
 
@@ -299,39 +398,8 @@ def render_metrics_panel() -> None:
 
     if st.button("Limpar conversa", use_container_width=True):
         _clear_conversation()
-
-    with st.expander("Configurações do LLM", expanded=False):
-        provider = st.selectbox(
-            "Provedor",
-            ["deepseek", "gemini", "local"],
-            index=0,
-            key="llm_provider",
-        )
-        model = st.text_input(
-            "Modelo",
-            value=st.session_state.get("llm_model", "deepseek-chat"),
-            key="llm_model",
-        )
-        api_key = st.text_input(
-            "API Key",
-            type="password",
-            value=st.session_state.get("llm_api_key", ""),
-            key="llm_api_key",
-        )
-
-        if provider == "local":
-            st.caption("Modo local: respostas analíticas sem API. Nenhuma chave necessária.")
-            st.session_state.pop("llm_config", None)
-        elif api_key:
-            st.session_state.llm_config = {
-                "provider": provider,
-                "model": model,
-                "api_key": api_key,
-            }
-        else:
-            st.session_state.pop("llm_config", None)
-            st.caption(f"Defina a API Key ou configure a env {provider.upper()}_API_KEY")
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 def _score_label(chunk: dict[str, Any]) -> str:
@@ -341,15 +409,14 @@ def _score_label(chunk: dict[str, Any]) -> str:
     return "--"
 
 
-def _render_rank_card(index: int, chunk: dict[str, Any]) -> None:
+def _topk_card_html(index: int, chunk: dict[str, Any]) -> str:
     metadata = chunk.get("metadata", {}) if isinstance(chunk, dict) else {}
     title = metadata.get("titulo") or "Documento"
     source = metadata.get("fonte") or "documento"
     text = (chunk.get("texto", "") if isinstance(chunk, dict) else "").strip()
     preview = text[:520] + ("..." if len(text) > 520 else "")
 
-    st.markdown(
-        f"""
+    return f"""
         <div class="rag-rank-card">
             <div class="rag-rank-head">
                 <span class="rag-rank-number">#{index}</span>
@@ -359,38 +426,52 @@ def _render_rank_card(index: int, chunk: dict[str, Any]) -> None:
             <div class="rag-rank-source">Origem: {html.escape(str(source))}</div>
             <div class="rag-rank-preview">{html.escape(preview)}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """
 
 
 def render_top_k_panel() -> None:
-    st.markdown('<div class="rag-side-panel">', unsafe_allow_html=True)
-    st.markdown('<div class="rag-side-title">Top-k encontrados</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="rag-side-kicker">Ranking dos chunks retornados pela última pergunta, do melhor score para baixo.</div>',
-        unsafe_allow_html=True,
-    )
-
     top_k = st.session_state.get("last_top_k") or []
     if not top_k:
-        st.info("Faça uma pergunta para ver os chunks mais relevantes da base.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.html(
+            """
+            <div class="rag-side-panel rag-topk-panel">
+                <div class="rag-topk-header">
+                    <div class="rag-side-title">Top-k encontrados</div>
+                    <div class="rag-side-kicker">Ranking dos chunks retornados pela última pergunta, do melhor score para baixo.</div>
+                </div>
+                <div class="rag-topk-scroll">
+                    <div class="rag-topk-empty">Faça uma pergunta para ver os chunks mais relevantes da base.</div>
+                </div>
+            </div>
+            """
+        )
         return
 
+    question_html = ""
     if st.session_state.get("last_question"):
-        st.caption(f"Pergunta: {st.session_state.last_question}")
+        question_html = f'<div class="rag-topk-question">Pergunta: {html.escape(str(st.session_state.last_question))}</div>'
 
     ranked_chunks = sorted(
         top_k,
         key=lambda chunk: float(chunk.get("score", 0.0)) if isinstance(chunk, dict) else 0.0,
         reverse=True,
     )
-    for index, chunk in enumerate(ranked_chunks, start=1):
-        _render_rank_card(index, chunk)
-    st.markdown("</div>", unsafe_allow_html=True)
+    cards_html = "".join(_topk_card_html(index, chunk) for index, chunk in enumerate(ranked_chunks, start=1))
 
-
+    st.html(
+        f"""
+        <div class="rag-side-panel rag-topk-panel">
+            <div class="rag-topk-header">
+                <div class="rag-side-title">Top-k encontrados</div>
+                <div class="rag-side-kicker">Ranking dos chunks retornados pela última pergunta, do melhor score para baixo.</div>
+                {question_html}
+            </div>
+            <div class="rag-topk-scroll">
+                {cards_html}
+            </div>
+        </div>
+        """
+    )
 def _text_to_html(value: Any) -> str:
     return html.escape(str(value or "")).replace("\n", "<br>")
 
