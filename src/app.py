@@ -12,7 +12,7 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VECTOR_DB_PATH = PROJECT_ROOT / "data" / "vector_db" / "chroma_data"
 COLLECTION_NAME = "ragnarok_knowledge_base"
-DEFAULT_TOP_K = 5
+DEFAULT_TOP_K = 10
 
 
 def _inject_styles() -> None:
@@ -346,7 +346,7 @@ def _ensure_state() -> None:
 
 @st.cache_resource(show_spinner=False)
 def get_collection():
-    """Retorna a coleÃ§Ã£o Chroma usada pelo app."""
+    """Retorna a coleção Chroma usada pelo app."""
     import chromadb
     from chromadb.config import Settings
 
