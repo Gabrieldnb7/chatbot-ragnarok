@@ -103,12 +103,13 @@ def _build_provider_prompt(query: str, retrieved_context: Sequence[Dict[str, Any
         "REGRAS OBRIGATÓRIAS:\n"
         "1. Use exclusivamente o CONTEXTO RECUPERADO para responder.\n"
         "2. CITExA FONTE no formato [Fonte: id] para cada afirmação que fizer.\n"
-        "3. Se a pergunta for sobre outro assunto que não PGD, responda:\n"
+        "3. Se a pergunta NÃO tiver NENHUMA relação com PGD, responda:\n"
         "   \"Não posso ajudar com isso. Sou especializado apenas em PGD "
         "(Programa de Gestão de Desempenho). Por favor, consulte a área responsável.\"\n"
-        "4. Se a resposta não estiver totalmente sustentada pelo contexto, "
-        "NÃO invente — diga que não encontrou informação suficiente e "
-        "sugira consultar a norma oficial completa.\n"
+        "4. Se a pergunta for sobre o PGD, mas a resposta não estiver "
+        "sustentada pelo contexto recuperado abaixo, NÃO invente — diga "
+        "apenas que não encontrou informação suficiente na base atual "
+        "para responder com precisão e sugira consultar a norma oficial.\n"
         "5. Não invente números, artigos, parágrafos, prazos, valores ou "
         "interpretações que não estejam explicitamente no contexto.\n"
         "6. Se citar um artigo ou parágrafo, informe o número exato conforme "
@@ -142,10 +143,9 @@ def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], co
                 "system",
                 "Você é um assistente especializado exclusivamente em PGD "
                 "(Programa de Gestão de Desempenho). Você NÃO possui conhecimento "
-                "externo. Responda SOMENTE se o contexto abaixo tiver informação "
-                "suficiente. Se a pergunta for sobre outro assunto, diga que não "
-                "pode ajudar. Sempre cite a fonte no formato [Fonte: id]. "
-                "Não invente artigos, prazos ou valores.",
+                "externo. Responda SOMENTE com base no contexto. Se a resposta não "
+                "estiver no contexto, avise o usuário sem inventar. Sempre cite "
+                "a fonte no formato [Fonte: id]. Não invente artigos, prazos ou valores.",
             ),
             ("human", prompt),
         ])
@@ -179,10 +179,9 @@ def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], 
                 "system",
                 "Você é um assistente especializado exclusivamente em PGD "
                 "(Programa de Gestão de Desempenho). Você NÃO possui conhecimento "
-                "externo. Responda SOMENTE se o contexto abaixo tiver informação "
-                "suficiente. Se a pergunta for sobre outro assunto, diga que não "
-                "pode ajudar. Sempre cite a fonte no formato [Fonte: id]. "
-                "Não invente artigos, prazos ou valores.",
+                "externo. Responda SOMENTE com base no contexto. Se a resposta não "
+                "estiver no contexto, avise o usuário sem inventar. Sempre cite "
+                "a fonte no formato [Fonte: id]. Não invente artigos, prazos ou valores.",
             ),
             ("human", prompt),
         ])
