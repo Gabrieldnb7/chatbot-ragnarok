@@ -583,6 +583,17 @@ def render_chat_interface() -> None:
     _ensure_state()
     _inject_styles()
 
+    # Auto-inicialização do banco de dados na primeira execução
+    if get_indexed_count() == 0:
+        with st.spinner("Inicializando base de conhecimento pela primeira vez (isso pode levar alguns segundos)..."):
+            import sys
+            import subprocess
+            from pathlib import Path
+            script_path = PROJECT_ROOT / "scripts" / "reingest_pdfs.py"
+            if script_path.exists():
+                subprocess.run([sys.executable, str(script_path)], cwd=str(PROJECT_ROOT), capture_output=True)
+            st.rerun()
+
     metrics_col, chat_col, top_k_col = st.columns([0.72, 2.25, 0.9], gap="large")
 
     with metrics_col:
