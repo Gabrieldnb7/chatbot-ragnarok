@@ -25,7 +25,7 @@ except ImportError:
 
 from stopwordsiso import stopwords as _iso_stopwords
 
-DEFAULT_SCORE_THRESHOLD = 0.12
+DEFAULT_SCORE_THRESHOLD = 0.78
 MAX_EXCERPT_LENGTH = 320
 MAX_SENTENCES_PER_SUMMARY = 8
 MAX_FACTS_PER_GROUP = 8
@@ -535,6 +535,7 @@ def _build_analytical_answer(query: str, retrieved_context: List[Dict[str, Any]]
     if llm_answer:
         answer_parts.append(llm_answer)
     else:
+        answer_parts.append("⚠️ **MODO LOCAL ATIVADO (SEM LLM)**: Nenhuma chave de API de Inteligência Artificial foi detectada nas suas variáveis de ambiente ou arquivo `.env`. Estou exibindo apenas a recuperação bruta dos trechos.\n")
         answer_parts.append(search_overview)
         if supporting_sentences:
             answer_parts.append("")
