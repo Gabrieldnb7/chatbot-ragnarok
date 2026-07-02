@@ -375,7 +375,16 @@ def generate_answer(question: str) -> dict[str, Any]:
     context = retrieve_context(question, top_k=DEFAULT_TOP_K)
     st.session_state.last_top_k = context
     st.session_state.last_question = question
-    return generate_rag_response(question, context)
+    
+    llm_config = {}
+    provider = st.session_state.get("llm_provider")
+    api_key = st.session_state.get("api_key")
+    if provider:
+        llm_config["provider"] = provider
+    if api_key:
+        llm_config["api_key"] = api_key
+        
+    return generate_rag_response(question, context, llm_config)
 
 
 def _clear_conversation() -> None:
@@ -396,9 +405,17 @@ def render_metrics_panel() -> None:
     st.metric("Chunks gerados", get_indexed_count())
     st.caption(f"Coleção: {COLLECTION_NAME}")
 
+
     if st.button("Limpar conversa", use_container_width=True):
         _clear_conversation()
     st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="rag-side-panel" style="margin-top: 1rem;">', unsafe_allow_html=True)
+    st.markdown('<div class="rag-side-title">Configuração do LLM</div>', unsafe_allow_html=True)
+    st.selectbox("Provedor LLM", ["gemini", "deepseek", "local"], key="llm_provider")
+    st.text_input("Chave da API (Opcional)", type="password", key="api_key", help="Deixe em branco para usar o .env")
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 

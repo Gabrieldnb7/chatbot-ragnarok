@@ -121,7 +121,10 @@ def _build_provider_prompt(query: str, retrieved_context: Sequence[Dict[str, Any
 
 
 def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], config_override: dict = None) -> str:
-    config = config_override or _gemini_config()
+    config = _gemini_config()
+    if config_override:
+        config.update({k: v for k, v in config_override.items() if v})
+    
     if not config or _ChatGoogleGenerativeAI is None:
         return ""
 
@@ -156,7 +159,10 @@ def _call_gemini_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], co
 
 def _call_deepseek_llm(query: str, retrieved_context: Sequence[Dict[str, Any]], config_override: dict = None) -> str:
     """Chama o DeepSeek via API compatível com OpenAI."""
-    config = config_override or _deepseek_config()
+    config = _deepseek_config()
+    if config_override:
+        config.update({k: v for k, v in config_override.items() if v})
+        
     if not config or _ChatOpenAI is None:
         return ""
 
