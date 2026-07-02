@@ -25,7 +25,7 @@ except ImportError:
 
 from stopwordsiso import stopwords as _iso_stopwords
 
-DEFAULT_SCORE_THRESHOLD = 0.78
+DEFAULT_SCORE_THRESHOLD = 0.50
 MAX_EXCERPT_LENGTH = 320
 MAX_SENTENCES_PER_SUMMARY = 8
 MAX_FACTS_PER_GROUP = 8
